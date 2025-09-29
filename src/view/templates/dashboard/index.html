@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 یارا — دستیار هوشمند شما</title>
+    <!-- فقط برای توسعه -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        iran: {
+                            green: '#239F40',
+                            red: '#DA291C'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        .chat-container {
+            scroll-behavior: smooth;
+        }
+
+        .inline-code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Vazirmatn', monospace;
+            direction: ltr;
+            font-size: 0.875em;
+        }
+
+        .typing-dots::after {
+            content: '...';
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-40 hidden md:hidden"></div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar (Right Side) -->
+        <div id="sidebar"
+            class="fixed md:static md:translate-x-0 h-full w-80 bg-white shadow-xl flex flex-col p-6 border-l border-gray-200 z-50 transform translate-x-full transition-transform duration-300 ease-in-out md:flex">
+            <div class="text-center mb-6">
+                <img src="https://incubator.ucf.edu/wp-content/uploads/2023/07/artificial-intelligence-new-technology-science-futuristic-abstract-human-brain-ai-technology-cpu-central-processor-unit-chipset-big-data-machine-learning-cyber-mind-domination-generative-ai-scaled-1.jpg"
+                    alt="یارا" class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-iran-green/20">
+                <h2 class="text-2xl font-bold mt-3 text-iran-green">🌟 یارا</h2>
+                <p class="text-gray-600 text-sm mt-1"><em>دستیار هوشمند شما</em></p>
+                <p class="text-xs text-gray-500 mt-2">با استفاده از هوش مصنوعی و اسناد شما، پاسخ‌های دقیق ارائه می‌دهد.</p>
+            </div>
+
+            <hr class="my-4 border-gray-200">
+
+            <h3 class="font-bold text-lg mb-3 flex items-center gap-2">🎛️ تنظیمات</h3>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm text-gray-700 mb-1">
+                    <span>📊 اسناد مرتبط:</span>
+                    <span id="top_k_value" class="font-bold text-iran-green">5</span>
+                </div>
+                <input type="range" id="top_k_slider" min="1" max="20" value="5"
+                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-iran-green">
+            </div>
+
+            <button id="clearChat"
+                class="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg flex items-center justify-center gap-2 transition mb-3">
+                🗑️ پاک‌کردن گفتگو
+            </button>
+
+            <button id="logoutBtn"
+                class="py-2 px-4 bg-gradient-to-r from-red-500 to-iran-red hover:from-red-600 hover:to-red-700 text-white rounded-lg flex items-center justify-center gap-2 transition shadow-sm mb-4"
+                onclick="window.location.href='{{ url_for('auth.logout') }}'">
+                🚪 خروج از حساب
+            </button>
+
+            <hr class="my-4 border-gray-200">
+
+            <h3 class="font-bold text-lg mb-3 flex items-center gap-2">📚 درباره یارا</h3>
+            <div class="bg-blue-50 p-3 rounded-lg text-sm">
+                <p class="font-bold text-gray-800">یارا</p>
+                <p class="text-gray-700 mt-1">یک دستیار هوشمند مبتنی بر RAG است که:</p>
+                <ul class="mt-2 space-y-1 pr-3 text-gray-600">
+                    <li>• از اسناد شما اطلاعات مرتبط را واکشی می‌کند</li>
+                    <li>• پاسخی دقیق و شخصی‌سازی شده ارائه می‌دهد</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <div class="bg-white shadow-sm p-3 flex items-center justify-between border-b">
+                <button id="sidebarToggle" class="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-700">
+                    ☰
+                </button>
+                <div class="text-center flex-1">
+                    <h1 class="text-lg font-bold text-gray-800">🧠 یارا — دستیار هوشمند شما</h1>
+                </div>
+                <div class="w-10"></div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="bg-white shadow-sm border-b">
+                <div class="max-w-6xl mx-auto px-4">
+                    <div class="flex justify-end space-x-reverse space-x-1 rtl:space-x-reverse">
+                        <button id="tab-chat" class="px-4 py-3 font-medium text-sm border-b-2 border-transparent text-gray-700 hover:text-iran-green hover:border-iran-green transition">
+                            💬 چت با یارا
+                        </button>
+                        <button id="tab-upload" class="px-4 py-3 font-medium text-sm border-b-2 border-transparent text-gray-700 hover:text-iran-green hover:border-iran-green transition">
+                            📤 آپلود منابع
+                        </button>
+                        <button id="tab-manage" class="px-4 py-3 font-medium text-sm border-b-2 border-transparent text-gray-700 hover:text-iran-green hover:border-iran-green transition">
+                            📂 مدیریت منابع
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-y-auto p-4 pb-20">
+                <!-- Chat Tab -->
+                <div id="chat-tab" class="max-w-4xl mx-auto h-full flex flex-col">
+                    <div id="chatContainer"
+                        class="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                        <!-- Messages will be added here -->
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div id="upload-tab" class="max-w-2xl mx-auto hidden">
+                    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">📤 آپلود اسناد جدید</h2>
+                        <p class="text-gray-600 text-sm mb-6">فایل‌های PDF خود را آپلود کنید.</p>
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="mb-4 p-3 rounded-lg text-sm font-medium {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+
+                        <form id="uploadForm" enctype="multipart/form-data" class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-iran-green transition">
+                                <input type="file" name="files" id="fileUpload" multiple accept=".pdf" class="hidden" required>
+                                <label for="fileUpload" class="cursor-pointer">
+                                    <div class="text-4xl mb-2">📄</div>
+                                    <p class="font-medium text-gray-700">فایل‌های PDF را انتخاب کنید</p>
+                                    <p class="text-sm text-gray-500 mt-1">حداکثر ۱۰ فایل — فقط فرمت PDF</p>
+                                </label>
+                            </div>
+                            <div class="text-left">
+                                <button type="submit" id="uploadBtn"
+                                    class="px-6 py-2.5 bg-gradient-to-r from-iran-green to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition">
+                                    🚀 آپلود و پردازش
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="mt-6 pt-4 border-t border-gray-100">
+                            <h3 class="font-medium text-gray-800 mb-2">نکات مهم:</h3>
+                            <ul class="text-sm text-gray-600 space-y-1 pr-2">
+                                <li>• فقط فایل‌های PDF پشتیبانی می‌شوند.</li>
+                                <li>• پس از آپلود، سیستم به‌طور خودکار اسناد را برای جستجو آماده می‌کند.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Tab -->
+                <div id="manage-tab" class="max-w-2xl mx-auto hidden">
+                    <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">📂 مدیریت اسناد آپلود شده</h2>
+                        <p class="text-gray-600 text-sm mb-4">فایل‌های زیر در سیستم شما ذخیره شده‌اند.</p>
+                        <div id="documents-list" class="space-y-3">
+                            <!-- لیست فایل‌ها -->
+                        </div>
+                        <button id="refreshDocumentsBtn"
+                            class="mt-4 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm transition">
+                            🔄 بروزرسانی لیست
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div id="input-area" class="p-4 border-t bg-white sticky bottom-0">
+                <div class="max-w-4xl mx-auto flex gap-2">
+                    <textarea id="userInput" placeholder="مثلاً: یارا چطور کار می‌کنه؟" maxlength="10000"
+                        class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-iran-green focus:border-transparent outline-none resize-none h-12"
+                        rows="1"></textarea>
+                    <button id="sendBtn"
+                        class="w-12 h-12 bg-gradient-to-r from-iran-green to-iran-red text-white rounded-xl flex items-center justify-center hover:opacity-90 transition">
+                        🚀
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer (خارج از flex container) -->
+    <footer class="text-center py-3 text-sm text-gray-500 border-t">
+        <p>✨ تهیه‌شده با ❤️ توسط <strong class="text-iran-green">aliakbar1881</strong></p>
+        <p>
+            <a href="https://github.com/aliakbar1881/ragtamplate" target="_blank" class="text-iran-green hover:underline">
+                🌐 مشاهده کد منبع
+            </a>
+        </p>
+    </footer>
+
+    <script>
+        // تعریف توابع جهانی
+        let switchTab, toggleSidebar;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- توابع ---
+            toggleSidebar = function () {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const isHidden = sidebar.classList.contains('translate-x-full');
+                if (isHidden) {
+                    sidebar.classList.remove('translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            };
+
+            switchTab = function (tabName) {
+                document.getElementById('chat-tab').classList.toggle('hidden', tabName !== 'chat');
+                document.getElementById('upload-tab').classList.toggle('hidden', tabName !== 'upload');
+                document.getElementById('manage-tab').classList.toggle('hidden', tabName !== 'manage');
+                document.getElementById('input-area').classList.toggle('hidden', tabName !== 'chat');
+
+                document.getElementById('tab-chat').classList.toggle('text-iran-green', tabName === 'chat');
+                document.getElementById('tab-chat').classList.toggle('border-iran-green', tabName === 'chat');
+                document.getElementById('tab-upload').classList.toggle('text-iran-green', tabName === 'upload');
+                document.getElementById('tab-upload').classList.toggle('border-iran-green', tabName === 'upload');
+                document.getElementById('tab-manage').classList.toggle('text-iran-green', tabName === 'manage');
+                document.getElementById('tab-manage').classList.toggle('border-iran-green', tabName === 'manage');
+
+                if (tabName === 'manage') {
+                    loadDocumentsList();
+                }
+            };
+
+            function simpleMarkdownToHtml(text) {
+                if (typeof text !== 'string') return String(text || '');
+                return text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/`(.*?)`/g, '<code class="inline-code">$1</code>')
+                    .replace(/\n/g, '<br>');
+            }
+
+            function scrollToBottom() {
+                const container = document.getElementById('chatContainer');
+                if (container) {
+                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                }
+            }
+
+            let typingIndicator = null;
+            function showTypingIndicator() {
+                if (typingIndicator) return;
+                typingIndicator = document.createElement('div');
+                typingIndicator.id = 'typing-indicator';
+                typingIndicator.className = 'flex justify-start w-full mb-4';
+                typingIndicator.innerHTML = `
+                    <div class="max-w-[85%] flex gap-3">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-iran-green to-green-600 flex items-center justify-center text-white">🤖</div>
+                        <div class="bg-white border border-gray-200 p-4 rounded-2xl rounded-bl-none shadow-sm">
+                            <strong class="text-iran-green block mb-1">یارا</strong>
+                            <span class="typing-dots">در حال پاسخ‌دهی</span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('chatContainer').appendChild(typingIndicator);
+                scrollToBottom();
+            }
+
+            function hideTypingIndicator() {
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                    typingIndicator = null;
+                }
+            }
+
+            function displayChunks(chunks) {
+                const existing = document.querySelector('#retrieved-chunks');
+                if (existing) existing.remove();
+                if (!chunks || chunks.length === 0) return;
+
+                const section = document.createElement('div');
+                section.id = 'retrieved-chunks';
+                section.className = 'mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200';
+                section.innerHTML = `
+                    <h3 class="text-sm font-bold text-blue-800 mb-2 flex items-center gap-1">🧠 پاسخ من بر اساس این اسناد تولید شده:</h3>
+                    <ul class="text-xs text-blue-700 space-y-1 mb-3">
+                        ${chunks.map(chunk => {
+                            const source = chunk.metadata?.source?.split('\\').pop() || 'نامشخص';
+                            const page = chunk.metadata?.page || '?';
+                            const score = chunk.metadata?.score !== undefined ? parseFloat(chunk.metadata.score).toFixed(2) : 'N/A';
+                            return `<li>📄 <strong>${source}</strong> (صفحه ${page}) — امتیاز: ${score}</li>`;
+                        }).join('')}
+                    </ul>
+                    <hr class="my-3 border-blue-200">
+                    <h4 class="text-sm font-bold text-blue-800 mb-2">📄 محتوای کامل اسناد مرتبط:</h4>
+                `;
+
+                chunks.forEach(chunk => {
+                    const card = document.createElement('div');
+                    card.className = 'mt-2 p-3 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 break-words whitespace-pre-wrap';
+                    const score = chunk.metadata?.score !== undefined ? parseFloat(chunk.metadata.score).toFixed(2) : 'N/A';
+                    const source = chunk.metadata?.source?.split('\\').pop() || 'نامشخص';
+                    const page = chunk.metadata?.page || '?';
+                    card.innerHTML = `
+                        <div class="flex flex-wrap gap-2 mb-2 text-xs">
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full">امتیاز: ${score}</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">منبع: ${source}</span>
+                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">صفحه: ${page}</span>
+                        </div>
+                        <div>${simpleMarkdownToHtml(chunk.page_content)}</div>
+                    `;
+                    section.appendChild(card);
+                });
+                document.getElementById('chatContainer').appendChild(section);
+            }
+
+            function renderMessage(role, content, chunks = null) {
+                const container = document.getElementById('chatContainer');
+                const isUser = role === 'user';
+                const isError = !isUser && (
+                    content.includes("خطا") ||
+                    content.includes("Max retries") ||
+                    content.includes("No connection")
+                );
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full mb-4`;
+
+                if (isError) {
+                    messageDiv.innerHTML = `
+                        <div class="max-w-[85%] flex gap-3">
+                            <div class="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center text-white">⚠️</div>
+                            <div class="bg-red-50 border border-red-200 p-4 rounded-2xl rounded-bl-none shadow-sm">
+                                <strong class="text-red-700 block">خطا در ارتباط با سرور!</strong>
+                                <p class="text-red-600 text-sm mt-2">
+                                    سرویس RAG روی پورت <code class="bg-red-100 px-1 py-0.5 rounded text-xs">8000</code> فعال نیست.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                } else if (isUser) {
+                    messageDiv.innerHTML = `
+                        <div class="max-w-[85%] flex gap-3">
+                            <div class="bg-blue-500 text-white p-4 rounded-2xl rounded-br-none shadow-sm break-words">
+                                ${simpleMarkdownToHtml(content)}
+                            </div>
+                            <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white">👤</div>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div class="max-w-[85%] flex gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-iran-green to-green-600 flex items-center justify-center text-white">🤖</div>
+                            <div class="bg-white border border-gray-200 p-4 rounded-2xl rounded-bl-none shadow-sm break-words">
+                                <strong class="text-iran-green block mb-1">یارا</strong>
+                                ${simpleMarkdownToHtml(content)}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(messageDiv);
+                if (!isUser && !isError && chunks && chunks.length > 0) {
+                    displayChunks(chunks);
+                }
+                scrollToBottom();
+            }
+
+            // --- بارگذاری پیام‌های اولیه ---
+            const initialMessages = {% if messages %}{{ messages | tojson | safe }}{% else %}[]{% endif %};
+            if (Array.isArray(initialMessages) && initialMessages.length > 0) {
+                initialMessages.forEach(msg => renderMessage(msg.role, msg.content, msg.chunks));
+            } else {
+                document.getElementById('chatContainer').innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center py-12 px-4 text-gray-700">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-iran-green to-green-500 flex items-center justify-center text-white text-3xl shadow-lg">🤖</div>
+                        <h2 class="text-xl font-bold text-gray-800 mt-4">سلام! من «یارا» هستم</h2>
+                        <p class="max-w-md mt-2">دستیار هوشمند شما برای پاسخ به سوالات با استفاده از اسناد شخصی‌تان.</p>
+                    </div>`;
+            }
+            scrollToBottom();
+
+            // --- شروع با تب چت ---
+            switchTab('chat');
+
+            // --- رویدادها ---
+            document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
+
+            document.getElementById('tab-chat').addEventListener('click', () => switchTab('chat'));
+            document.getElementById('tab-upload').addEventListener('click', () => switchTab('upload'));
+            document.getElementById('tab-manage').addEventListener('click', () => switchTab('manage'));
+
+            // --- ارسال پیام ---
+
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const clearBtn = document.getElementById('clearChat');
+            const topKSlider = document.getElementById('top_k_slider');
+            const topKValueDisplay = document.getElementById('top_k_value');
+
+            sendBtn.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            let currentTopK = parseInt(topKSlider.value) || 5;
+            topKSlider.addEventListener('input', function () {
+                currentTopK = parseInt(this.value);
+                topKValueDisplay.textContent = currentTopK;
+            });
+
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                renderMessage('user', message);
+                userInput.value = '';
+                showTypingIndicator();
+
+                try {
+                    const response = await fetch('/send_message', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message, top_k: currentTopK })
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const data = await response.json();
+                    hideTypingIndicator();
+                    renderMessage('assistant', data.content, data.chunks);
+
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    hideTypingIndicator();
+                    renderMessage('assistant', "❌ خطایی در ارتباط با سرور رخ داد. لطفاً دوباره تلاش کنید.");
+                }
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // --- پاک‌کردن چت ---
+            clearBtn.addEventListener('click', async function () {
+                try {
+                    const response = await fetch('/clear_chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (response.ok) {
+                        document.getElementById('chatContainer').innerHTML = '';
+                        document.querySelector('#retrieved-chunks')?.remove();
+                        renderMessage('assistant', "سلام! 😊 من یارا هستم — دستیار هوشمند شما. چطور می‌تونم کمکتون کنم؟");
+                    }
+                } catch (e) {
+                    alert("اتصال به سرور برقرار نشد");
+                }
+            });
+
+            // --- آپلود فایل ---
+            document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('fileUpload');
+                const btn = document.getElementById('uploadBtn');
+                if (!fileInput.files.length) {
+                    alert('لطفاً حداقل یک فایل انتخاب کنید.');
+                    return;
+                }
+                for (let file of fileInput.files) {
+                    if (!file.name.toLowerCase().endsWith('.pdf')) {
+                        alert('فقط فایل‌های PDF مجاز هستند.');
+                        return;
+                    }
+                }
+
+                const formData = new FormData();
+                for (let file of fileInput.files) {
+                    formData.append('files', file);
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'در حال آپلود...';
+
+                try {
+                    const res = await fetch('http://localhost:8000/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert('✅ ' + data.message);
+                        fileInput.value = '';
+                    } else {
+                        alert('❌ خطا: ' + (data.detail || 'آپلود ناموفق بود.'));
+                    }
+                } catch (err) {
+                    alert('❌ خطای ارتباط با سرور: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '🚀 آپلود و پردازش';
+                }
+            });
+
+            // --- مدیریت منابع ---
+            async function loadDocumentsList() {
+                const listContainer = document.getElementById('documents-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '<p class="text-gray-500">در حال بارگذاری...</p>';
+                try {
+                    const response = await fetch('http://localhost:8000/documents', { method: 'GET' });
+                    if (!response.ok) throw new Error('Failed to fetch documents');
+                    const files = await response.json();
+                    if (files.length === 0) {
+                        listContainer.innerHTML = '<p class="text-gray-500">هیچ فایلی آپلود نشده است.</p>';
+                        return;
+                    }
+                    listContainer.innerHTML = files.map(file => `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <span class="font-medium text-gray-800">📄 ${file}</span>
+                            <button onclick="deleteDocument('${file}')" 
+                                class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm transition">
+                                🗑️ حذف
+                            </button>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error("Error loading documents:", error);
+                    listContainer.innerHTML = '<p class="text-red-600">❌ خطا در بارگذاری لیست فایل‌ها</p>';
+                }
+            }
+
+            window.deleteDocument = async function (filename) {
+                if (!confirm(`آیا مطمئن هستید که می‌خواهید فایل "${filename}" را حذف کنید؟`)) return;
+                try {
+                    const response = await fetch(`http://localhost:8000/documents/${filename}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete document');
+                    alert('✅ فایل با موفقیت حذف شد.');
+                    loadDocumentsList();
+                } catch (error) {
+                    alert('❌ خطا در حذف فایل: ' + (error.message || 'خطای نامشخص'));
+                }
+            };
+
+            document.getElementById('refreshDocumentsBtn')?.addEventListener('click', loadDocumentsList);
+        });
+    </script>
+</body>
+
+</html>
