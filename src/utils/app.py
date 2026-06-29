@@ -1,5 +1,5 @@
-from src.service.rag_api import app as api
-from src.view.app import create_app as front
+from service.rag_api import app as api
+from view.app import create_app as front
 import uvicorn
 import threading
 

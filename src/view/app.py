@@ -1,10 +1,10 @@
 # app.py
 from flask import Flask
 from flask_login import LoginManager
-from src.model.models import db, User
-from src.view.auth import auth
-from src.view.dashboard import dashboard
-from src.utils.config import Config
+from model.models import db, User
+from view.auth import auth
+from view.dashboard import dashboard
+from utils.config import Config
 
 
 

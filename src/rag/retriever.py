@@ -1,4 +1,4 @@
-from src.core.retriver_base import RetriverBase
+from core.retriver_base import RetriverBase
 from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyPDFLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -6,6 +6,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from typing import List, Dict, Any
 import os
+import sys
 
 
 class Retriver(RetriverBase):
@@ -25,6 +26,28 @@ class Retriver(RetriverBase):
                 self.vectorstore = self.create_retriever(chunks, self.embedding_model)
                 self.save_vectorstore(self.vectorstore, self.vector_path)
 
+    def get_data_dir(self, data_dir=None):
+        import sys, os
+        if data_dir is not None:
+            return data_dir
+        if getattr(sys, 'frozen', False):
+            exe_dir = os.path.dirname(sys.executable)
+        else:
+            exe_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir_path = os.path.join(exe_dir, 'data')
+        print(f"📂 [DEBUG] Looking for data in: {data_dir_path}")
+        return data_dir_path
+
+    def load_documents(self, data_dir=None):
+        data_dir = self.get_data_dir(data_dir)
+        print(f"📂 Loading documents from: {data_dir}")  # برای دیباگ
+        pdf_loader = DirectoryLoader(data_dir, glob="*.pdf", loader_cls=PyPDFLoader)
+        txt_loader = DirectoryLoader(data_dir, glob="*.txt", loader_cls=TextLoader)
+        pdf_docs = pdf_loader.load()
+        txt_docs = txt_loader.load()
+        all_docs = pdf_docs + txt_docs
+        return all_docs
+
     def retrieve(self, query, top_k=10):
         if self.vectorstore:
             docs_and_scores = self.vectorstore.similarity_search_with_score(query, k=top_k)
@@ -33,14 +56,6 @@ class Retriver(RetriverBase):
             return [doc for doc, _ in docs_and_scores]
         else:
             return []
-
-    def load_documents(self, data_dir="./data"):
-        pdf_loader = DirectoryLoader(data_dir, glob="*.pdf", loader_cls=PyPDFLoader)
-        txt_loader = DirectoryLoader(data_dir, glob="*.txt", loader_cls=TextLoader)
-        pdf_docs = pdf_loader.load()
-        txt_docs = txt_loader.load()
-        all_docs = pdf_docs + txt_docs
-        return all_docs
 
     def split_documents(self, documents, chunk_size=1000, chunk_overlap=200):
         text_splitter = RecursiveCharacterTextSplitter(

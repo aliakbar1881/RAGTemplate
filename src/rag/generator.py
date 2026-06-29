@@ -1,5 +1,5 @@
-from src.core.generator_base import GeneratorBase
-from src.utils.config import Config
+from core.generator_base import GeneratorBase
+from utils.config import Config
 from openai import OpenAI
 
 

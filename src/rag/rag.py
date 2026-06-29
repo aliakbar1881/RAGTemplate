@@ -1,6 +1,6 @@
-from src.core.rag_base import RAGBase
-from src.rag.generator import Generator
-from src.rag.retriever import Retriver
+from core.rag_base import RAGBase
+from rag.generator import Generator
+from rag.retriever import Retriver
 import numpy as np
 
 

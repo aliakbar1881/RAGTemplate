@@ -7,8 +7,8 @@ import os
 import shutil
 from pathlib import Path
 
-from src.rag.rag import RAG
-from src.utils.config import Config
+from rag.rag import RAG
+from utils.config import Config
 
 
 app = FastAPI(title="YARA RAG API", description="Backend API for YARA RAG assistant")

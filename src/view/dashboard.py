@@ -1,7 +1,7 @@
 # dashboard.py
 from flask import Blueprint, render_template, request, jsonify, Response, stream_with_context, session
 from flask_login import login_required, current_user
-from src.model.models import db, ChatSession, Message, RetrievedChunk
+from model.models import db, ChatSession, Message, RetrievedChunk
 import requests
 import time
 import json

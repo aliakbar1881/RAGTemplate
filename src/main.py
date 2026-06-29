@@ -1,4 +1,4 @@
-from src.utils.app import Application
+from utils.app import Application
 
 
 def main():
