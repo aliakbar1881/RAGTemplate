@@ -52,23 +52,22 @@ RAGTemplate/
 ### Installation
 
 1. Clone the repository:
-   ```bash
+```bash
    git clone https://github.com/aliakbar1881/RAGTemplate.git
    cd RAGTemplate
 ```
+
 Set up the environment using Conda:
 ```bash
-
-conda env create -f environment.yaml
-conda activate rag-template
+   conda env create -f environment.yaml
+   conda activate rag-template
 ```
-        If you prefer pip, create a virtual environment and install dependencies manually from environment.yaml or requirements.txt (if available).
+If you prefer pip, create a virtual environment and install dependencies manually from environment.yaml or requirements.txt (if available).
 
 Running the Application
 
 Start the application:
 ```bash
-
-python src/main.py
+   python src/main.py
 ```
 The web interface should be available at http://localhost:5000 (or the port specified in your configuration).
